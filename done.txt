@@ -1,0 +1,19 @@
+var z: bool;
+var c: char;
+var i1, i2: int;
+var r: real;
+var str: string;
+var ip: int*;
+var cp: char*;
+var rp: real*;
+
+if(z == true) { z = false; }
+if(z == false) { z = false; } else { z = true; }
+if(z == true) { z = false; z = true; }
+
+while(a == true) { a = false; }
+for(var i: int = 0; i < 10; i++){ a = true; }
+
+function foo(): int { return 0; }
+function foo2(arg-> x, y, z: int): int { return 0; }
+function foo3(arg-> x, y, z: int; arg-> f: real): int { return 0; }

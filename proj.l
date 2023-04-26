@@ -3,143 +3,151 @@
     printf("comment: %s\n", yytext);
 }
 bool {
-    printf("token: %s\n", yytext);
+    printf("BOOL: %s\n", yytext);
     return BOOL;
 }
 char {
-    printf("token: %s\n", yytext);
+    printf("CHAR: %s\n", yytext);
     return CHAR;
 }
 int {
-    printf("token: %s\n", yytext);
+    printf("INT: %s\n", yytext);
     return INT;
 }
 real {
-    printf("token: %s\n", yytext);
+    printf("REAL: %s\n", yytext);
     return REAL;
 }
 string {
-    printf("token: %s\n", yytext);
+    printf("STRING: %s\n", yytext);
     return STRING;
 }
 int\* {
-    printf("token: %s\n", yytext);
+    printf("INTPTR: %s\n", yytext);
     return INTPTR;
 }
 char\* {
-    printf("token: %s\n", yytext);
+    printf("CHARPTR: %s\n", yytext);
     return CHARPTR;
 }
 real\* {
-    printf("token: %s\n", yytext);
+    printf("REALPTR: %s\n", yytext);
     return REALPTR;
 }
 
 while {
-    printf("token: %s\n", yytext);
+    printf("WHILE: %s\n", yytext);
     return WHILE;
 }
 for {
-    printf("token: %s\n", yytext);
+    printf("FOR: %s\n", yytext);
     return FOR;
 }
 var {
-    printf("token: %s\n", yytext);
+    printf("VAR: %s\n", yytext);
     return VAR;
 }
 (true)|(false) {
-    printf("token: %s\n", yytext);
+    printf("BOOLLIT: %s\n", yytext);
     return BOOLLIT;
 }
-arg->$ {
-    printf("token: %s\n", yytext);
+arg-\> {
+    printf("PARAMGRH: %s\n", yytext);
     return PARAMGRH;
 }
 function {
-    printf("token: %s\n", yytext);
+    printf("FUNCTION: %s\n", yytext);
     return FUNCTION;
 }
 return {
-    printf("token: %s\n", yytext);
+    printf("RETURN: %s\n", yytext);
     return RETURN;
 }
 null {
-    printf("token: %s\n", yytext);
-    return NULLPTR;
+    printf("NULLLIT: %s\n", yytext);
+    return NULLLIT;
 }
 void {
-    printf("token: %s\n", yytext);
+    printf("VOID: %s\n", yytext);
     return VOID;
 }
 do {
-    printf("token: %s\n", yytext);
+    printf("DO: %s\n", yytext);
     return DO;
 }
 
 if {
-    printf("token: %s\n", yytext);
+    printf("IF: %s\n", yytext);
     return IF;
 }
 else {
-    printf("token: %s\n", yytext);
+    printf("ELSE: %s\n", yytext);
     return ELSE;
 }
 "==" {
-    printf("token: %s\n", yytext);
+    printf("EQ: %s\n", yytext);
     return EQ;
 }
 "!=" {
-    printf("token: %s\n", yytext);
+    printf("NOTEQ: %s\n", yytext);
     return NOTEQ;
 }
 ">" {
-    printf("token: %s\n", yytext);
+    printf("GR: %s\n", yytext);
     return GR;
 }
 ">=" {
-    printf("token: %s\n", yytext);
+    printf("GREQ: %s\n", yytext);
     return GREQ;
 }
 "<" {
-    printf("token: %s\n", yytext);
+    printf("LE: %s\n", yytext);
     return LE;
 }
 "<=" {
-    printf("token: %s\n", yytext);
+    printf("LEEQ: %s\n", yytext);
     return LEEQ;
 }
 [a-zA-Z]+[a-zA-Z0-9_]* {
-    printf("token: %s\n", yytext);
+    printf("ID: %s\n", yytext);
     return ID;
 }
+[a-zA-Z]+[a-zA-Z0-9_]*\+\+ {
+    printf("VARINCR: %s\n", yytext);
+    return VARINCR;
+}
+[a-zA-Z]+[a-zA-Z0-9_]*\-\- {
+    printf("VARDECR: %s\n", yytext);
+    return VARDECR;
+}
 \'.\' {
-    printf("token: %s\n", yytext);
+    printf("CHARLIT: %s\n", yytext);
     return CHARLIT;
 }
 \".*\" {
-    printf("token: %s\n", yytext);
+    printf("STRINGLIT: %s\n", yytext);
     return STRINGLIT;
 }
 "&&" {
-    printf("token: %s\n", yytext);
+    printf("AND: %s\n", yytext);
     return AND;
 }
 "||" {
-    printf("token: %s\n", yytext);
+    printf("OR: %s\n", yytext);
     return OR;
 }
 [0-9]+ {
-    printf("token: %s\n", yytext);
+    printf("INTLIT: %s\n", yytext);
     yylval = atoi(yytext);
     return INTLIT;
 }
 [0-9]+\.[0-9]+ {
-    printf("token: %s\n", yytext);
+    printf("REALLIT: %s\n", yytext);
     return REALLIT;
 }
-[ \t\n]+ {;}
+[ \t\n]+ { ; }
 . {
-    printf("token: %s\n", yytext);
+    printf("SYMBOL: %s\n", yytext);
     return yytext[0];
 }
 .|\n ;
