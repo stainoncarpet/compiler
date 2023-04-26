@@ -13,7 +13,17 @@ if(z == true) { z = false; z = true; }
 
 while(a == true) { a = false; }
 for(var i: int = 0; i < 10; i++){ a = true; }
+do {
+    var a: int;
+    var b: char;
+    a = 10;
+    a = a + 2;
+    var a: string;
+} while(true);
 
 function foo(): int { return 0; }
 function foo2(arg-> x, y, z: int): int { return 0; }
 function foo3(arg-> x, y, z: int; arg-> f: real): int { return 0; }
+function foo4(): void { return 0; }
+
+var nup: int* = null;

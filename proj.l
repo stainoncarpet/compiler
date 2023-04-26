@@ -110,6 +110,8 @@ else {
 }
 [a-zA-Z]+[a-zA-Z0-9_]* {
     printf("ID: %s\n", yytext);
+    yylval._string = strdup(yytext);
+    // YYSTYPE = yylval;
     return ID;
 }
 [a-zA-Z]+[a-zA-Z0-9_]*\+\+ {
@@ -138,11 +140,12 @@ else {
 }
 [0-9]+ {
     printf("INTLIT: %s\n", yytext);
-    yylval = atoi(yytext);
+    yylval._int = atoi(yytext);
     return INTLIT;
 }
 [0-9]+\.[0-9]+ {
     printf("REALLIT: %s\n", yytext);
+    yylval._float = atof(yytext);
     return REALLIT;
 }
 [ \t\n]+ { ; }
