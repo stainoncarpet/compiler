@@ -1,3 +1,4 @@
+ #include <string.h>
 %%
 \/\*(.|\n)*?\*\/ {
     printf("comment: %s\n", yytext);
@@ -49,6 +50,7 @@ var {
 }
 (true)|(false) {
     printf("BOOLLIT: %s\n", yytext);
+    yylval._bool = strcmp(yytext, "false") == 0 ? 0 : 1;
     return BOOLLIT;
 }
 arg-\> {
@@ -124,10 +126,12 @@ else {
 }
 \'.\' {
     printf("CHARLIT: %s\n", yytext);
+    yylval._char = yytext[0];
     return CHARLIT;
 }
 \".*\" {
     printf("STRINGLIT: %s\n", yytext);
+    yylval._string = strdup(yytext);
     return STRINGLIT;
 }
 "&&" {

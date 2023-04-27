@@ -27,3 +27,7 @@ function foo3(arg-> x, y, z: int; arg-> f: real): int { return 0; }
 function foo4(): void { return 0; }
 
 var nup: int* = null;
+
+var a: int;
+var b, c: int;
+var d, e, f: int;

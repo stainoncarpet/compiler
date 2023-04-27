@@ -1,0 +1,6 @@
+var i = 33: int;
+var myString = "wow, it works!": string;
+
+var i: int;
+var m = true, n = false, x: bool;
+var c = 'a': char;
