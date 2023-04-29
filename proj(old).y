@@ -6,8 +6,7 @@
 int yylex();
 int yyerror();
 int yywrap();
-void addItemToList(char*, char*, int);
-void printList();
+int addIdentifier(char*, char, char, char*, void*, int, float, char*);
 
 typedef struct _identifier {
     char* name;
@@ -22,15 +21,6 @@ typedef struct _identifier {
         float f;
     } value;
 } identifier;
-
-typedef struct node {
-	struct node *next;
-	struct node *prev;
-	int lvl;
-	struct node *parent;
-	char *token;
-	char *content;
-    } list;
 %}
 
 
@@ -50,7 +40,7 @@ typedef struct node {
         int i;
         float f;
     } any;
-}
+};
 
 %token <_string> BOOL CHAR INT REAL STRING
 %token INTPTR CHARPTR REALPTR
@@ -76,12 +66,11 @@ typedef struct node {
 S: | LINES ;
 LINES: LINES LINE | LINE ;
 LINE: STMT ;
-STMT: IF_STMT {  }
+STMT: IF_STMT 
     | WHILE_LOOP | FOR_LOOP | DO_LOOP
     | VARDECL ';' | FUNCDECL 
     | ASSIGN ';'
-    | RETURN ID ';'
-    | RETURN LIT ';' { ;}
+    | RETURN ID ';' | RETURN LIT ';'
 ;
 IF_STMT: IF '(' COND ')' '{' BLOCK '}' ELSE '{' BLOCK '}'
         | IF '(' COND ')' '{' BLOCK '}'
@@ -110,20 +99,22 @@ OP: INTLIT { $$ = $1; }
 LIT: INTLIT { $$.i = $1; }
     | REALLIT { $$.f = $1; }
     | BOOLLIT { $$.b = $1; }
-    | CHARLIT { $$.c = $1; printf("parsed CHARLIT: %c\n", $1); }
+    | CHARLIT { $$.c = $1; }
     | STRINGLIT { $$.s = strdup($1); }
     | NULLLIT { $$.n = NULL; }
 ;
 
 VARDECL: VAR VARLIST ;
 VARLIST: ID ':' TYPE
-    | ID '=' LIT ':' TYPE
+    | ID '=' LIT ':' TYPE { 
+        addIdentifier($1, $3.b, $3.c, $3.s, $3.n, $3.i, $3.f, $5); 
+    }
     | ID '=' ID ':' TYPE
     | ID ',' VARLIST 
     | ID '=' LIT ',' VARLIST
 ;
 
-FUNCDECL: FUNCTION ID '(' PARAMS ')' ':' TYPE '{' BLOCK '}' {addItemToList("func", "", 1);}
+FUNCDECL: FUNCTION ID '(' PARAMS ')' ':' TYPE '{' BLOCK '}'
         | FUNCTION ID '(' PARAMS ')' ':' VOID '{' BLOCK '}'
 ;
 TYPE: BOOL {$$ = "BOOL";}
@@ -138,64 +129,66 @@ TYPE: BOOL {$$ = "BOOL";}
 PARAMS: PARAMS ';' PARAMGR | PARAMGR | ;
 PARAMGR: PARAMGRH VARLIST ;
 %%
+
+
 #include "lex.yy.c"
-list *first;
-int lvl = 0;
-
-int main() {
-	first = (list *)malloc(sizeof(list));
-	return yyparse();
-}
-
+int main() { return yyparse();}
 int yyerror() { printf("Error parsing LINE\n");  return 0; }
 
-int yywrap() {
-    printList();
-    return 1;
+identifier* idpool[CAPACITY];
+static int size = 0;
+
+int addIdentifier(char* idname, char b, char c, char* s, void* n, int i, float f, char* typename) {
+    for(int i = 0; i < size; i++) {
+        if(strcmp(idpool[i]->name, idname) == 0) {
+            printf(">>> VAR: [%s] IS ALREADY DECLARED\n", idname);
+            yyerror();
+            exit(1);
+        }    
+    }
+
+    identifier* newId = (identifier*)malloc(sizeof(identifier));
+    newId->name = strdup(idname);
+    newId->type = strdup(typename);
+
+    if(strcmp(typename, "INT") == 0) {
+        newId->value.i = i;
+    } else if (strcmp(typename, "REAL") == 0) {
+        newId->value.f = f;
+    } else if (strcmp(typename, "BOOL") == 0) {
+        newId->value.b = b;
+    } else if (strcmp(typename, "CHAR") == 0) {
+        newId->value.c = c;
+    } else if (strcmp(typename, "STRING") == 0) {
+        newId->value.s = strdup(s);
+    } else {
+        newId->value.n = NULL; // OR 0
+    }
+
+    idpool[size++] = newId;
+
+    return 0;
 }
 
-void addItemToList(char* token, char* content, int lvlchange) {
-	printf("!!!!!!!!!!! - %s", first->token);
-	if (first->token == NULL) {
-	 first->token = strdup(token);
-	 first->content = strdup(content);
-	 first->prev = NULL;
-	 first->next = NULL;
-	 //printf("!!!!!!!!!!! - %s", first->next);
-	}
-	else {
-		list *prev = first;
-		list *iterator = first;
-		while(first->next != NULL) {
-			prev = iterator;
-			iterator = first->next;
-		}
+int yywrap(){
+    for(int i = 0; i < size; i++) {
+        printf("FREEING [%s] [%s] \n", idpool[i]->name, idpool[i]->type);
+        char* typename = strdup(idpool[i]->type);
 
-		list *newElement = (list *)malloc(sizeof(list));
-		newElement->prev = prev;
-		newElement->next = NULL;
-		if(lvlchange = 1) {lvl++;}
-		else {lvl--;}
-		newElement->lvl = lvl;
-		newElement->token = strdup(token);
-		newElement->content = strdup(content);
-	}
-}
-
-void printList(){
-	printf("!!!!!!!!!!!!!\n");
-	printf("(%s %s", first->token, first->content);
-
-	int templvl = 0;
-	list *iterator = first;
-	int j = 0;
-	while(iterator->next != NULL && j<5) {
-		if (templvl < iterator->lvl){printf(")\n");}
-		iterator = first->next;
-		//{printf("%*s%s\n", level*2, "", entry->d_name);}
-		printf("%*s%s %s", iterator->lvl*2, "",iterator->token, iterator->content);
-		templvl = iterator->lvl;
-		iterator = iterator->next;
-		j++;
-	}
+        if(strcmp(typename, "INT") == 0) {
+            printf("[%d]\n", idpool[i]->value.i);
+        } else if (strcmp(typename, "REAL") == 0) {
+            printf("[%f]\n", idpool[i]->value.f);
+        } else if (strcmp(typename, "BOOL") == 0) {
+            printf("[%d]\n", idpool[i]->value.b);
+        } else if (strcmp(typename, "CHAR") == 0) {
+            printf("[%d]\n", idpool[i]->value.c);
+        } else if (strcmp(typename, "STRING") == 0) {
+            printf("[%s]\n", idpool[i]->value.s);
+        } else {
+            printf("NULL\n");
+        }
+        
+        free(idpool[i]);
+    }
 }
