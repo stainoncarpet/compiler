@@ -8,8 +8,8 @@ int yyerror();
 int yywrap();
 void addItemToList(char*, char*, int);
 void printList();
-void addChildParentNode(char*, char*);
-void addSiblingNode(char* nodeType, char* id);
+void addChildParentNode(char*, char*, int);
+void addSiblingNode(char* nodeType, char* id, int);
 void printTree();
 
 typedef struct node {
@@ -64,22 +64,22 @@ typedef struct node {
 
 
 %%
-S: | LINES ;
-LINES: LINES STMT | STMT ;
-STMT: IF_STMT
-    | WHILE_LOOP | FOR_LOOP | DO_LOOP
-    | VARDECL ';' | FUNCDECL 
-    | ASSIGN ';'
+s: | lines ;
+lines: lines stmt | stmt ;
+stmt: if_stmt
+    | while_loop | for_loop | do_loop
+    | vardecl ';' | funcdecl 
+    | assign ';'
     | RETURN ID ';'
     | RETURN LIT ';' { /*addChildParentNode("RET!!", ""); */}
 ;
-IF_STMT: IF '(' COND ')' SQBROPN BLOCK SQBRCLS ELSE SQBROPN BLOCK SQBRCLS
-        | IF '(' COND ')' SQBROPN BLOCK SQBRCLS
+if_stmt: IF '(' cond ')' open block close ELSE open block close
+        | IF '(' cond ')' open block close
 ;
-WHILE_LOOP: WHILE '(' COND ')' SQBROPN BLOCK SQBRCLS ;
-FOR_LOOP: FOR '(' VARDECL ';' COND ';' ITER ')' SQBROPN BLOCK SQBRCLS ;
-DO_LOOP: DO SQBROPN BLOCK SQBRCLS WHILE '(' COND ')' ';' ;
-COND: ID LE ID 
+while_loop: WHILE '(' cond ')' open block close ;
+for_loop: FOR '(' vardecl ';' cond ';' iter ')' open block close ;
+do_loop: DO SQBROPN block close WHILE '(' cond ')' ';' ;
+cond: ID LE ID 
     | ID GR ID 
     | ID EQ ID 
     | ID GR LIT 
@@ -87,9 +87,9 @@ COND: ID LE ID
     | ID EQ LIT
     | BOOLLIT
 ;
-ITER: ASSIGN | VARINCR | VARDECR;
-BLOCK: BLOCK STMT | STMT ;
-ASSIGN: ID '=' OP ;
+iter: assign | VARINCR | VARDECR;
+block: block stmt | stmt ;
+assign: ID '=' OP ;
 OP: INTLIT { $$ = $1; } 
     | ID { $$ = $1; }
     | OP '+' OP {printf("R: %d\n", $1 + $3); } 
@@ -105,23 +105,24 @@ LIT: INTLIT { $$.i = $1; }
     | NULLLIT { $$.n = NULL; }
 ;
 
-VARDECL: VAR VARLIST ;
-VARLIST: ID ':' TYPE
+vardecl: VAR varlist ;
+varlist: ID ':' TYPE
     | ID '=' LIT ':' TYPE
     | ID '=' ID ':' TYPE
-    | ID ',' VARLIST 
-    | ID '=' LIT ',' VARLIST
+    | ID ',' varlist 
+    | ID '=' LIT ',' varlist
 ;
 
-FUNCDECL: FUNCTION ID '(' PARAMS ')' ':' TYPE SQBROPN BLOCK SQBRCLS { 
+funcdecl: FUNCTION ID '(' params ')' ':' TYPE open block close { 
         // addItemToList("func", "", 1); 
-        addChildParentNode("FUNCTION", "");
-        addChildParentNode("ID", $2);
-        addSiblingNode("PARAMS", "ARG");
-        addSiblingNode("RETURN ", $7);
-        addSiblingNode("BLOCK ", "");
+        addChildParentNode("FUNCTION", "", 1);
+        addChildParentNode("ID", $2, 1);
+        addSiblingNode("params", "ARG", 0);
+        addSiblingNode("RETURN ", $7, 0);
+        addSiblingNode("block ", "", 1);
+
     }
-        | FUNCTION ID '(' PARAMS ')' ':' VOID SQBROPN BLOCK SQBRCLS
+        | FUNCTION ID '(' params ')' ':' VOID open block close
 ;
 TYPE: BOOL {$$ = "BOOL";}
     | CHAR {$$ = "CHAR";}
@@ -132,12 +133,12 @@ TYPE: BOOL {$$ = "BOOL";}
     | CHARPTR {$$ = "CHARPTR";}
     | REALPTR {$$ = "REALPTR";}
 ;
-PARAMS: PARAMS ';' PARAMGR 
-    | PARAMGR 
+params: params ';' paramgr 
+    | paramgr 
     | {};
-PARAMGR: PARAMGRH VARLIST ;
-SQBROPN: {}
-SQBRCLS: {}
+paramgr: PARAMGRH varlist ;
+open: SQBROPN ;
+close: SQBRCLS ;
 %%
 
 
@@ -169,8 +170,15 @@ int yywrap() {
     return 1;
 }
 
-void addChildParentNode(char* nodeType, char* id) {
-    printf("###Adding node: [%s] with value: [%s]\n", nodeType, id);
+void addChildParentNode(char* nodeType, char* id, int lvlStep) {
+    if(strlen(id) > 0) {
+        printf("###Adding node: [%s] with value: [%s]\n", nodeType, id);
+    } else {
+        printf("###Adding node: [%s]\n", nodeType);
+    }
+
+    lvl = lvl + lvlStep;
+    
     treenode* newNode = (treenode *)malloc(sizeof(treenode));
 
     newNode->lvl = currentParent->lvl + 1;
@@ -181,7 +189,7 @@ void addChildParentNode(char* nodeType, char* id) {
     currentParent = newNode;
 }
 
-void addSiblingNode(char* nodeType, char* id) {
+void addSiblingNode(char* nodeType, char* id, int lvlStep) {
     printf("###Adding sibling: [%s] to %s\n", nodeType, currentParent->token);
     treenode* newNode = (treenode *)malloc(sizeof(treenode));
 
@@ -202,7 +210,7 @@ void printTree() {
 
 
     while(iterator != NULL) {
-        printf("@iterator %s %s lvl:%d \n", iterator->token, iterator->content, iterator->lvl);
+        //printf("@iterator %s %s lvl:%d \n", iterator->token, iterator->content, iterator->lvl);
 
         iterator = iterator->child;
     }
@@ -210,18 +218,10 @@ void printTree() {
     iterator = currentParent->next;
 
     while(iterator != NULL) {
-        printf("@iterator %s %s lvl:%d \n", iterator->token, iterator->content, iterator->lvl);
+        //printf("@iterator %s %s lvl:%d \n", iterator->token, iterator->content, iterator->lvl);
 
         iterator = iterator->child;
     }
-}
-
-void printChildren() {
-
-}
-
-void printSiblings() {
-    
 }
 
 void addItemToList(char* token, char* content, int lvlchange) {
@@ -235,8 +235,7 @@ void addItemToList(char* token, char* content, int lvlchange) {
 		treenode *newElement = (treenode *)malloc(sizeof(treenode));
 		newElement->prev = prev;
 		newElement->next = NULL;
-		if(lvlchange = 1) {lvl++;}
-		else {lvl--;}
+		lvl = lvl + lvlchange;
 		newElement->lvl = lvl;
 		newElement->token = strdup(token);
 		newElement->content = strdup(content);
