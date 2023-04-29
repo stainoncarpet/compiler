@@ -110,6 +110,14 @@ else {
     printf("LEEQ: %s\n", yytext);
     return LEEQ;
 }
+"{" {
+    printf("SQBROPN: %s\n", yytext);
+    return SQBROPN;
+}
+"}" {
+    printf("SQBRCLS: %s\n", yytext);
+    return SQBRCLS;
+}
 [a-zA-Z]+[a-zA-Z0-9_]* {
     printf("ID: %s\n", yytext);
     yylval._string = strdup(yytext);
@@ -126,7 +134,7 @@ else {
 }
 \'.\' {
     printf("CHARLIT: %s\n", yytext);
-    yylval._char = yytext[0];
+    yylval._char = yytext[1];
     return CHARLIT;
 }
 \".*\" {
@@ -157,5 +165,4 @@ else {
     printf("SYMBOL: %s\n", yytext);
     return yytext[0];
 }
-.|\n ;
 %%
