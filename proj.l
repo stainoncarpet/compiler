@@ -1,7 +1,8 @@
  #include <string.h>
 %%
-\/\*(.|\n)*?\*\/ {
-    printf("comment: %s\n", yytext);
+\/\*.*?\*\/ {
+    // \/\*(.|\n)*?\*\/ 
+    printf("comment1: [%s]\n", yytext);
 }
 bool {
     printf("BOOL: %s\n", yytext);
@@ -110,19 +111,20 @@ else {
     printf("LEEQ: %s\n", yytext);
     return LEEQ;
 }
-"{" {
-    printf("SQBROPN: %s\n", yytext);
-    return SQBROPN;
-}
-"}" {
-    printf("SQBRCLS: %s\n", yytext);
-    return SQBRCLS;
-}
 [a-zA-Z]+[a-zA-Z0-9_]* {
     printf("ID: %s\n", yytext);
     yylval._string = strdup(yytext);
-    // YYSTYPE = yylval;
     return ID;
+}
+\*[a-zA-Z]+[a-zA-Z0-9_]* {
+    printf("DEREFID: %s\n", yytext);
+    yylval._string = strdup(yytext);
+    return DEREFID;
+}
+\|[a-zA-Z]+[a-zA-Z0-9_]*\| {
+    printf("LENGTHOF: %s\n", yytext);
+    yylval._string = strdup(yytext);
+    return LENGTHOF;
 }
 [a-zA-Z]+[a-zA-Z0-9_]*\+\+ {
     printf("VARINCR: %s\n", yytext);
@@ -150,12 +152,12 @@ else {
     printf("OR: %s\n", yytext);
     return OR;
 }
-[0-9]+ {
+-?[0-9]+ {
     printf("INTLIT: %s\n", yytext);
     yylval._int = atoi(yytext);
     return INTLIT;
 }
-[0-9]+\.[0-9]+ {
+-?[0-9]+\.[0-9]+ {
     printf("REALLIT: %s\n", yytext);
     yylval._float = atof(yytext);
     return REALLIT;

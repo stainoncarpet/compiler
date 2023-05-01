@@ -6,21 +6,13 @@
 int yylex();
 int yyerror();
 int yywrap();
-void addItemToList(char*, char*, int);
-void printList();
-void addChildParentNode(char*, char*, int);
-void addSiblingNode(char* nodeType, char* id, int);
-void printTree();
-
-typedef struct node {
-	struct node *next;
-	struct node *prev;
-	int lvl;
-	struct node *parent;
-    struct node *child;
-	char *token;
-	char *content;
-    } treenode;
+void setHasMain(char);
+typedef struct _node {
+    char* token;
+    struct node* left;
+    struct node* right;
+    // list of possible types + fields held by struct 
+} node;
 %}
 
 
@@ -31,6 +23,7 @@ typedef struct node {
     char _char;
     char _bool;
     void* _null;
+    node* nd;
 
     union _any {
         char b; 
@@ -50,52 +43,72 @@ typedef struct node {
 %token <_bool> BOOLLIT
 %token <_int> INTLIT
 %token <_float> REALLIT
-%token <_string> ID
+%token <_string> ID DEREFID
 %token IF ELSE DO WHILE FOR FUNCTION
 %token RETURN VOID
-%token VAR PARAMGRH
-%token EQ NOTEQ GR GREQ LE LEEQ AND OR VARINCR VARDECR SQBROPN SQBRCLS
+%token VAR PARAMGRH LENGTHOF
+%token EQ NOTEQ GR GREQ LE LEEQ AND OR VARINCR VARDECR
 %left '+' '-'
 %left '*' '/'
-%type <_int> OP
+%type <_int> LENGTHOF
 %type <_string> TYPE
 %type <any> LIT
 
 
 
 %%
-s: | lines ;
-lines: lines stmt | stmt ;
+s: | stmts ;
+stmts: stmts stmt | stmt ;
 stmt: if_stmt
-    | while_loop | for_loop | do_loop
-    | vardecl ';' | funcdecl 
+    | while_loop 
+    | for_loop 
+    | do_loop
+    | vardecl ';'
+    | arrdecl ';'
+    | funcdecl 
+    | funccall ';'
     | assign ';'
-    | RETURN ID ';'
-    | RETURN LIT ';' { /*addChildParentNode("RET!!", ""); */}
+    | RETURN expr ';'
+    | '{' block '}'
+    | expr
 ;
-if_stmt: IF '(' cond ')' open block close ELSE open block close
-        | IF '(' cond ')' open block close
+if_stmt: IF '(' cond ')' '{' block '}' ELSE '{' block '}'
+        | IF '(' cond ')' '{' block '}' ELSE stmt
+        | IF '(' cond ')' '{' block '}'
+        | IF '(' cond ')' stmt
 ;
-while_loop: WHILE '(' cond ')' open block close ;
-for_loop: FOR '(' vardecl ';' cond ';' iter ')' open block close ;
-do_loop: DO SQBROPN block close WHILE '(' cond ')' ';' ;
-cond: ID LE ID 
-    | ID GR ID 
-    | ID EQ ID 
-    | ID GR LIT 
-    | ID LE LIT 
-    | ID EQ LIT
-    | BOOLLIT
+while_loop: WHILE '(' cond ')' '{' block '}' | WHILE '(' cond ')' stmt;
+for_loop: FOR '(' vardecl ';' cond ';' iter ')' '{' block '}' ;
+do_loop: DO '{' block '}' WHILE '(' cond ')' ';' ;
+cond: expr ;
 ;
 iter: assign | VARINCR | VARDECR;
 block: block stmt | stmt ;
-assign: ID '=' OP ;
-OP: INTLIT { $$ = $1; } 
-    | ID { $$ = $1; }
-    | OP '+' OP {printf("R: %d\n", $1 + $3); } 
-    | OP '-' OP {printf("R: %d\n", $1 - $3); } 
-    | OP '*' OP {printf("R: %d\n", $1 * $3); } 
-    | OP '/' OP {printf("R: %d\n", $1 / $3); } 
+assign: ID '=' expr 
+        | ID '[' INTLIT ']' '=' expr
+        | ID '[' expr ']' '=' expr
+        | DEREFID '=' expr
+;
+expr: LIT
+    | ID
+    | LENGTHOF
+    | expr '+' expr
+    | expr '-' expr
+    | expr '*' expr
+    | expr '/' expr
+    | funccall
+    | expr OR expr
+    | expr AND expr
+    | expr EQ expr
+    | expr NOTEQ expr
+    | expr LE expr
+    | expr GR expr
+    | expr NOTEQ expr
+    | '(' expr ')'
+    | DEREFID
+    | '*' expr
+    | '!' BOOLLIT | BOOLLIT
+    | '!' ID
 ;
 LIT: INTLIT { $$.i = $1; }
     | REALLIT { $$.f = $1; }
@@ -105,24 +118,26 @@ LIT: INTLIT { $$.i = $1; }
     | NULLLIT { $$.n = NULL; }
 ;
 
-vardecl: VAR varlist ;
+vardecl: VAR varlist;
 varlist: ID ':' TYPE
     | ID '=' LIT ':' TYPE
     | ID '=' ID ':' TYPE
     | ID ',' varlist 
     | ID '=' LIT ',' varlist
 ;
-
-funcdecl: FUNCTION ID '(' params ')' ':' TYPE open block close { 
-        // addItemToList("func", "", 1); 
-        addChildParentNode("FUNCTION", "", 1);
-        addChildParentNode("ID", $2, 1);
-        addSiblingNode("params", "ARG", 0);
-        addSiblingNode("RETURN ", $7, 0);
-        addSiblingNode("block ", "", 1);
-
-    }
-        | FUNCTION ID '(' params ')' ':' VOID open block close
+arrdecl: TYPE ID '[' INTLIT ']'
+        | ',' ID '[' INTLIT ']'
+        | TYPE ID '[' INTLIT ']' arrdecl
+        | TYPE ID '[' INTLIT ']' '=' LIT
+        | ',' ID '[' INTLIT ']' '=' LIT
+;
+funcdecl: FUNCTION ID '(' params ')' ':' TYPE '{' block '}' {
+    if(strcmp($2, "main") == 0) { setHasMain(1); };
+}
+        | FUNCTION ID '(' params ')' ':' VOID '{' block '}'
+;
+funccall: ID '=' ID '(' ')' { ;} | ID '(' ')' { ;}
+        | ID '=' ID '(' args ')' { ;} | ID '(' args ')' { ;}
 ;
 TYPE: BOOL {$$ = "BOOL";}
     | CHAR {$$ = "CHAR";}
@@ -137,121 +152,26 @@ params: params ';' paramgr
     | paramgr 
     | {};
 paramgr: PARAMGRH varlist ;
-open: SQBROPN ;
-close: SQBRCLS ;
+args: ID | ID ',' args | LIT | LIT ',' args ;
 %%
 
 
 
 #include "lex.yy.c"
-treenode *treehead;
-treenode* currentParent;
-int lvl = 0;
+
+char hasMain = 0;
 
 int main() {
-	treehead = (treenode *)malloc(sizeof(treenode));
-    treehead->prev = NULL;
-	treehead->next = NULL;
-    treehead->lvl = 0;
-    treehead->parent = NULL;
-    treehead->child = NULL;
-    treehead->token = strdup("CODE");
-	treehead->content = NULL;
-    currentParent = treehead;
-
 	return yyparse();
 }
 
 int yyerror() { printf("Error parsing LINE\n");  return 0; }
 
 int yywrap() {
-    //printList();
-    printTree();
     return 1;
 }
 
-void addChildParentNode(char* nodeType, char* id, int lvlStep) {
-    if(strlen(id) > 0) {
-        printf("###Adding node: [%s] with value: [%s]\n", nodeType, id);
-    } else {
-        printf("###Adding node: [%s]\n", nodeType);
-    }
-
-    lvl = lvl + lvlStep;
-    
-    treenode* newNode = (treenode *)malloc(sizeof(treenode));
-
-    newNode->lvl = currentParent->lvl + 1;
-    newNode->token = strdup(nodeType);
-    newNode->content = strdup(id);
-    currentParent->child = newNode;
-    newNode->parent = currentParent;
-    currentParent = newNode;
-}
-
-void addSiblingNode(char* nodeType, char* id, int lvlStep) {
-    printf("###Adding sibling: [%s] to %s\n", nodeType, currentParent->token);
-    treenode* newNode = (treenode *)malloc(sizeof(treenode));
-
-    currentParent->next = newNode;
-    newNode->prev = currentParent;
-    newNode->next = NULL;
-    newNode->lvl = currentParent->lvl;
-    newNode->parent = currentParent->parent;
-    newNode->child = NULL;
-    newNode->token = strdup(nodeType);
-    newNode->content = strdup(id);
-    //currentParent = newNode;
-}
-
-void printTree() {
-    printf("#Printing tree\n");
-    treenode* iterator = treehead;
-
-
-    while(iterator != NULL) {
-        //printf("@iterator %s %s lvl:%d \n", iterator->token, iterator->content, iterator->lvl);
-
-        iterator = iterator->child;
-    }
-    
-    iterator = currentParent->next;
-
-    while(iterator != NULL) {
-        //printf("@iterator %s %s lvl:%d \n", iterator->token, iterator->content, iterator->lvl);
-
-        iterator = iterator->child;
-    }
-}
-
-void addItemToList(char* token, char* content, int lvlchange) {
-	treenode *prev = treehead;
-		treenode *iterator = treehead;
-		while(treehead->next != NULL) {
-			prev = iterator;
-			iterator = treehead->next;
-		}
-
-		treenode *newElement = (treenode *)malloc(sizeof(treenode));
-		newElement->prev = prev;
-		newElement->next = NULL;
-		lvl = lvl + lvlchange;
-		newElement->lvl = lvl;
-		newElement->token = strdup(token);
-		newElement->content = strdup(content);
-}
-
-void printList(){
-	int templvl = 0;
-	treenode *iterator = treehead;
-	int j = 0;
-	while(iterator->next != NULL) {
-		if (templvl < iterator->lvl){printf(")\n");}
-		iterator = treehead->next;
-		//{printf("%*s%s\n", level*2, "", entry->d_name);}
-		printf("%*s%s %s", iterator->lvl*2, "",iterator->token, iterator->content);
-		templvl = iterator->lvl;
-		iterator = iterator->next;
-		j++;
-	}
+void setHasMain(char hasMain) {
+    hasMain = hasMain;
+    printf("main function found\n");
 }
