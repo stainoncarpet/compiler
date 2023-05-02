@@ -50,7 +50,7 @@ typedef struct _node {
 %token EQ NOTEQ GR GREQ LE LEEQ AND OR VARINCR VARDECR
 %left '+' '-'
 %left '*' '/'
-%type <_int> LENGTHOF
+%type <_int> LENGTHOF ADDRESSOFID
 %type <_string> TYPE
 %type <any> LIT
 
@@ -78,12 +78,12 @@ if_stmt: IF '(' cond ')' '{' block '}' ELSE '{' block '}'
         | IF '(' cond ')' stmt
 ;
 while_loop: WHILE '(' cond ')' '{' block '}' | WHILE '(' cond ')' stmt;
-for_loop: FOR '(' vardecl ';' cond ';' iter ')' '{' block '}' ;
+for_loop: FOR '(' ID '=' expr ';' cond ';' iter ')' '{' block '}' ;
 do_loop: DO '{' block '}' WHILE '(' cond ')' ';' ;
 cond: expr ;
 ;
 iter: assign | VARINCR | VARDECR;
-block: block stmt | stmt ;
+block: block stmt | stmt | ;
 assign: ID '=' expr 
         | ID '[' INTLIT ']' '=' expr
         | ID '[' expr ']' '=' expr
@@ -96,16 +96,21 @@ expr: LIT
     | expr '-' expr
     | expr '*' expr
     | expr '/' expr
+    | expr expr { /* in cases when -... e.g. "x = x -1"; */ }
     | funccall
     | expr OR expr
     | expr AND expr
     | expr EQ expr
     | expr NOTEQ expr
     | expr LE expr
+    | expr LEEQ expr
     | expr GR expr
+    | expr GREQ expr
     | expr NOTEQ expr
     | '(' expr ')'
     | DEREFID
+    | ADDRESSOFID
+    | ADDRESSOFID '[' expr ']'
     | '*' expr
     | '!' BOOLLIT | BOOLLIT
     | '!' ID
@@ -136,8 +141,10 @@ funcdecl: FUNCTION ID '(' params ')' ':' TYPE '{' block '}' {
 }
         | FUNCTION ID '(' params ')' ':' VOID '{' block '}'
 ;
-funccall: ID '=' ID '(' ')' { ;} | ID '(' ')' { ;}
-        | ID '=' ID '(' args ')' { ;} | ID '(' args ')' { ;}
+funccall: ID '=' ID '(' ')' { ;} 
+        | ID '(' ')' { ;}
+        | ID '=' ID '(' args ')'
+        | ID '(' args ')' { ;}
 ;
 TYPE: BOOL {$$ = "BOOL";}
     | CHAR {$$ = "CHAR";}

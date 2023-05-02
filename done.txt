@@ -12,7 +12,7 @@ if(z == false) { z = false; } else { z = true; }
 if(z == true) { z = false; z = true; }
 
 while(a == true) { a = false; }
-for(var i: int = 0; i < 10; i++){ a = true; }
+for(i = 0; i < 10; i++){ a = true; }
 do {
     var a: int;
     var b: char;
@@ -30,8 +30,6 @@ function foo4(): void { return 0; }
 function goo(): char{
     return 'a';
 }
-
-var nup: int* = null;
 
 var a: int;
 var b, c: int;
@@ -123,16 +121,44 @@ function foo_2(): int { var a: int; a = 2; return a; }
 function foo_3(): int { if (true) { return foo(); } return 0; }
 function foo_4(): void { var a: int; a = 2; }
 
-3 || 2
-(3 + 2) / 3 - 5 * 2
-true && false || false
-5
-3.234
-true
--5
-*x
-*(p+5)
-!false
-a == b
+if(3 || 2) { j = 3; } else { k = (3 + 2) / 3 - 5 * 2; }
+if(true && false || false) { j = 3; } else { k = 4; }
+if(3 || 2) { j = 3; } else { k = 3.234; }
+if(true) { j = 3; } else { k = 4; }
+if(3 || 2) { j = 3; } else { k = -5; }
+if(3 || 2) { j = 3; } else { k = *x; }
+if(3 || 2) { j = 3; } else { k = *x; }
+if(a == b) { j = 3; } else { k = *(p+5); }
+if(!false) { j = 3; } else { k = *x; }
+
 a = foo(i, j);
 foo(i, j);
+
+if(3 > 2) {
+    /*...statements...*/
+    i = 5; /* i has been declared above */
+}
+/* more examples ... */
+if(true) { j = 3; } else { k = 4; }
+while(true) { l = 2; k = l + j; }
+
+
+if(true) i = 5;
+if(true) { j = 3; } else x = x -1;
+while(false) x = x + 1;
+for (i=0; i<10; i=i+2){ a = a + i;}
+do {a = a + i; i= i + 1;} while (i<=10);
+
+var x: int;
+var y: int*;
+x = 5;
+y = &x;
+x = 6;
+var x: char*;
+string y[10];
+var z: char;
+y = "foobar";
+x = &y[5]; /* x points to 'r' */
+z = *(x - 5); /* z is 'f' */
+
+y = "barfoo"; /* z is still 'f', but x now points to 'o' */

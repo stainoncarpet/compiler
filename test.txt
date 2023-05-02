@@ -1,3 +1,139 @@
+var z: bool;
+var c: char;
+var i1, i2: int;
+var r: real;
+var str: string;
+var ip: int*;
+var cp: char*;
+var rp: real*;
+
+if(z == true) { z = false; }
+if(z == false) { z = false; } else { z = true; }
+if(z == true) { z = false; z = true; }
+
+while(a == true) { a = false; }
+for(i = 0; i < 10; i++){ a = true; }
+do {
+    var a: int;
+    var b: char;
+    a = 10;
+    a = a + 2;
+    var a: string;
+} while(true);
+
+function foo(): int { return 0; }
+function foo_2(): int { return 0; }
+function f234(): void { }
+function foo2(arg-> x, y, z: int): int { return 0; }
+function foo3(arg-> x, y, z: int; arg-> f: real): int { return 0; }
+function foo4(): void { return 0; }
+function goo(): char{
+    return 'a';
+}
+
+var a: int;
+var b, c: int;
+var d, e, f: int;
+
+function foo(arg-> i, j, k: int): int {
+    function fee(arg-> l, m, n: int; arg-> x, y: real): bool {
+        return true;
+    }
+    return 0;
+}
+
+
+function goo(arg-> i, j, k: int): void {
+    function fee (arg-> l, m, n: real): bool {
+        return true;
+    }
+
+    fee(2, 3.5, 0.4);
+}
+
+
+function foo(arg-> i, j, k: int; arg-> l, m, n: bool): int {return 0;}
+function fee(arg-> a, b: int): void { }
+function fei(arg-> a, b, c: int; arg-> d, e, f: bool; arg-> g, h: int):
+int {return 0;}
+
+function foo(arg-> i, j, k: int): int {
+    function square(arg-> t: int): int {
+        var temp: int;
+        temp = t*t;
+        return 0;
+    }
+    var total: int; /* variable declarations */
+    total = 1; /* statements */
+    return total;
+}
+
+var i = 0: int;
+var m = true, n = false, x: bool;
+var c = 'a': char;
+
+string a[30], b[100] = "moshe";
+var c: char;
+var i: int;
+c = 'e';
+a[19] = 'f';
+a[4+2] = 'g';
+b = a;
+b[3] = c;
+string a[30], b[100] = "moshe";
+var c: char;
+var i: int;
+c = 'e';
+a[19] = 'f';
+a[4+2] = 'g';
+b = a;
+b[3] = c;
+a = "test"; /* basically equivalent to a[0] = 't'; a[1] = 'e'; a[2] = 's'; a[3] = 't'; a[4] = '\0'; */
+i = |b|; /* this assigns 100 to variable i, since the length operator returns the size of the character array */
+
+x = expr; /* lhs is variable identifier */
+str[expr] = expr; /* lhs is string element */
+*ptr = expr; /* lhs is dereferenced pointer */
+
+function foo(): int {
+    var x: int;
+        {
+            var y: int;
+            x = 1;
+            y = 2;
+            {
+                x = 2;
+            }
+            y = 3;
+        }
+    return 0;
+}
+
+function foo(): int {
+    {
+        {} /* empty code blocks are okay, although not very useful */
+    }
+    return 0;
+}
+
+function foo(): int { return 0; }
+function foo_2(): int { var a: int; a = 2; return a; }
+function foo_3(): int { if (true) { return foo(); } return 0; }
+function foo_4(): void { var a: int; a = 2; }
+
+if(3 || 2) { j = 3; } else { k = (3 + 2) / 3 - 5 * 2; }
+if(true && false || false) { j = 3; } else { k = 4; }
+if(3 || 2) { j = 3; } else { k = 3.234; }
+if(true) { j = 3; } else { k = 4; }
+if(3 || 2) { j = 3; } else { k = -5; }
+if(3 || 2) { j = 3; } else { k = *x; }
+if(3 || 2) { j = 3; } else { k = *x; }
+if(a == b) { j = 3; } else { k = *(p+5); }
+if(!false) { j = 3; } else { k = *x; }
+
+a = foo(i, j);
+foo(i, j);
+
 if(3 > 2) {
     /*...statements...*/
     i = 5; /* i has been declared above */
@@ -12,3 +148,17 @@ if(true) { j = 3; } else x = x -1;
 while(false) x = x + 1;
 for (i=0; i<10; i=i+2){ a = a + i;}
 do {a = a + i; i= i + 1;} while (i<=10);
+
+var x: int;
+var y: int*;
+x = 5;
+y = &x;
+x = 6;
+var x: char*;
+string y[10];
+var z: char;
+y = "foobar";
+x = &y[5]; /* x points to 'r' */
+z = *(x - 5); /* z is 'f' */
+
+y = "barfoo"; /* z is still 'f', but x now points to 'o' */

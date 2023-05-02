@@ -1,7 +1,6 @@
  #include <string.h>
 %%
 \/\*.*?\*\/ {
-    // \/\*(.|\n)*?\*\/ 
     printf("comment1: [%s]\n", yytext);
 }
 bool {
@@ -121,6 +120,11 @@ else {
     yylval._string = strdup(yytext);
     return DEREFID;
 }
+&[a-zA-Z]+[a-zA-Z0-9_]* {
+    printf("ADDRESSOFID: %s\n", yytext);
+    yylval._string = strdup(yytext);
+    return ADDRESSOFID;
+}
 \|[a-zA-Z]+[a-zA-Z0-9_]*\| {
     printf("LENGTHOF: %s\n", yytext);
     yylval._string = strdup(yytext);
@@ -152,12 +156,12 @@ else {
     printf("OR: %s\n", yytext);
     return OR;
 }
--?[0-9]+ {
+(-?[0-9]+)|(0[xX][0-9A-F]+) {
     printf("INTLIT: %s\n", yytext);
     yylval._int = atoi(yytext);
     return INTLIT;
 }
--?[0-9]+\.[0-9]+ {
+(-?[0-9]+\.[0-9]+)([eE][-\+][0-9]+)? {
     printf("REALLIT: %s\n", yytext);
     yylval._float = atof(yytext);
     return REALLIT;
