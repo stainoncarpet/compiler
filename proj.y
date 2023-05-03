@@ -36,7 +36,6 @@ typedef struct _node {
 }
 
 %token <_string> BOOL CHAR INT REAL STRING
-%token INTPTR CHARPTR REALPTR
 %token <_null> NULLLIT
 %token <_string> STRINGLIT
 %token <_char> CHARLIT
@@ -44,10 +43,7 @@ typedef struct _node {
 %token <_int> INTLIT
 %token <_float> REALLIT
 %token <_string> ID LENGTHOF
-%token IF ELSE DO WHILE FOR FUNCTION
-%token RETURN VOID
-%token VAR PARAMGRH
-%token EQ NOTEQ GT GREQ LT LEEQ AND OR VARINCR VARDECR
+%token EQ NOTEQ GT GREQ LT LEEQ AND OR VARINCR VARDECR RETURN VOID VAR PARAMGRH IF ELSE DO WHILE FOR FUNCTION INTPTR CHARPTR REALPTR
 %left OR
 %left AND
 %left EQ NOTEQ
@@ -57,6 +53,7 @@ typedef struct _node {
 %left '!' '&'
 %left '='
 %left '(' ')'
+%left ELSE
 %type <_string> TYPE
 %type <any> LIT
 
@@ -88,34 +85,49 @@ cond: expr ;
 iter: assign | VARINCR | VARDECR;
 block:  statement_list | ;
 assign: ID '=' expr 
-        | ID '[' INTLIT ']' '=' expr
         | ID '[' expr ']' '=' expr
         | '*' ID '=' expr
         | ID '=' expr LIT
         | ID '=' '&' ID '[' INTLIT ']' 
 ;
 expr: LIT
+    | funccall
     | ID
     | LENGTHOF
-    | expr '+' expr
-    | expr '-' expr
-    | expr '*' expr
-    | expr '/' expr
-    | funccall
-    | expr OR expr
-    | expr AND expr
-    | expr EQ expr
-    | expr NOTEQ expr
-    | expr LT expr
-    | expr LEEQ expr
-    | expr GT expr
-    | expr GREQ expr
-    | '(' expr ')'
-    | '*' expr
-    | '!' expr
-    | '!' expr
-    | '&' expr
+    | expr_subt
+    | expr_mult
+    | expr_add
+    | expr_div
+    | expr_or
+    | expr_and
+    | expr_eq
+    | expr_noteq
+    | expr_lt
+    | expr_leeq
+    | expr_gt
+    | expr_greq
+    | expr_enslosed
+    | expr_deref
+    | expr_flipped
+    | expr_ref
+
 ;
+expr_greq: expr GREQ expr;
+expr_gt: expr GT expr;
+expr_leeq: expr LEEQ expr;
+expr_lt: expr LT expr;
+expr_noteq: expr NOTEQ expr;
+expr_eq: expr EQ expr;
+expr_or: expr OR expr;
+expr_and: expr AND expr;
+expr_add: expr '+' expr ;
+expr_subt: expr '-' expr;
+expr_mult: expr '*' expr;
+expr_div: expr '/' expr;
+expr_enslosed: '(' expr ')' ;
+expr_deref: '*' ID | '*' expr_enslosed;
+expr_flipped: '!' expr;
+expr_ref: '&' ID ;
 LIT: INTLIT { $$.i = $1; }
     | REALLIT { $$.f = $1; }
     | BOOLLIT { $$.b = $1; }
@@ -140,7 +152,7 @@ arrdecl: TYPE ID '[' INTLIT ']'
 funcdecl: FUNCTION ID '(' params ')' ':' TYPE '{' block '}' { }
         | FUNCTION ID '(' params ')' ':' VOID '{' block '}'
 ;
-funccall: ID '(' args ')' | ID '=' ID '(' args ')' ;
+funccall: ID '(' args ')';
 TYPE: BOOL {$$ = "BOOL";}
     | CHAR {$$ = "CHAR";}
     | INT {$$ = "INT";}
