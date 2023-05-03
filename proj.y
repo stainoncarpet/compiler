@@ -43,23 +43,28 @@ typedef struct _node {
 %token <_bool> BOOLLIT
 %token <_int> INTLIT
 %token <_float> REALLIT
-%token <_string> ID DEREFID
+%token <_string> ID LENGTHOF
 %token IF ELSE DO WHILE FOR FUNCTION
 %token RETURN VOID
-%token VAR PARAMGRH LENGTHOF
-%token EQ NOTEQ GR GREQ LE LEEQ AND OR VARINCR VARDECR
+%token VAR PARAMGRH
+%token EQ NOTEQ GT GREQ LT LEEQ AND OR VARINCR VARDECR
+%left OR
+%left AND
+%left EQ NOTEQ
+%left LT LEEQ GT GREQ
 %left '+' '-'
 %left '*' '/'
-%type <_int> LENGTHOF ADDRESSOFID
+%left '!' '&'
+%left '='
+%left '(' ')'
 %type <_string> TYPE
 %type <any> LIT
 
 
-
 %%
-s: | stmts ;
-stmts: stmts stmt | stmt ;
-stmt: if_stmt
+program: statement_list ;
+statement_list: statement_list statement | statement ;
+statement: if_statement
     | while_loop 
     | for_loop 
     | do_loop
@@ -69,25 +74,25 @@ stmt: if_stmt
     | funccall ';'
     | assign ';'
     | RETURN expr ';'
-    | '{' block '}'
     | expr
+    | '{' block '}'
 ;
-if_stmt: IF '(' cond ')' '{' block '}' ELSE '{' block '}'
-        | IF '(' cond ')' '{' block '}' ELSE stmt
-        | IF '(' cond ')' '{' block '}'
-        | IF '(' cond ')' stmt
+if_statement: IF '(' cond ')' statement ELSE statement
+        | IF '(' cond ')' statement
 ;
-while_loop: WHILE '(' cond ')' '{' block '}' | WHILE '(' cond ')' stmt;
+while_loop: WHILE '(' cond ')' statement;
 for_loop: FOR '(' ID '=' expr ';' cond ';' iter ')' '{' block '}' ;
 do_loop: DO '{' block '}' WHILE '(' cond ')' ';' ;
 cond: expr ;
 ;
 iter: assign | VARINCR | VARDECR;
-block: block stmt | stmt | ;
+block:  statement_list | ;
 assign: ID '=' expr 
         | ID '[' INTLIT ']' '=' expr
         | ID '[' expr ']' '=' expr
-        | DEREFID '=' expr
+        | '*' ID '=' expr
+        | ID '=' expr LIT
+        | ID '=' '&' ID '[' INTLIT ']' 
 ;
 expr: LIT
     | ID
@@ -96,24 +101,20 @@ expr: LIT
     | expr '-' expr
     | expr '*' expr
     | expr '/' expr
-    | expr expr { /* in cases when -... e.g. "x = x -1"; */ }
     | funccall
     | expr OR expr
     | expr AND expr
     | expr EQ expr
     | expr NOTEQ expr
-    | expr LE expr
+    | expr LT expr
     | expr LEEQ expr
-    | expr GR expr
+    | expr GT expr
     | expr GREQ expr
-    | expr NOTEQ expr
     | '(' expr ')'
-    | DEREFID
-    | ADDRESSOFID
-    | ADDRESSOFID '[' expr ']'
     | '*' expr
-    | '!' BOOLLIT | BOOLLIT
-    | '!' ID
+    | '!' expr
+    | '!' expr
+    | '&' expr
 ;
 LIT: INTLIT { $$.i = $1; }
     | REALLIT { $$.f = $1; }
@@ -136,16 +137,10 @@ arrdecl: TYPE ID '[' INTLIT ']'
         | TYPE ID '[' INTLIT ']' '=' LIT
         | ',' ID '[' INTLIT ']' '=' LIT
 ;
-funcdecl: FUNCTION ID '(' params ')' ':' TYPE '{' block '}' {
-    if(strcmp($2, "main") == 0) { setHasMain(1); };
-}
+funcdecl: FUNCTION ID '(' params ')' ':' TYPE '{' block '}' { }
         | FUNCTION ID '(' params ')' ':' VOID '{' block '}'
 ;
-funccall: ID '=' ID '(' ')' { ;} 
-        | ID '(' ')' { ;}
-        | ID '=' ID '(' args ')'
-        | ID '(' args ')' { ;}
-;
+funccall: ID '(' args ')' | ID '=' ID '(' args ')' ;
 TYPE: BOOL {$$ = "BOOL";}
     | CHAR {$$ = "CHAR";}
     | INT {$$ = "INT";}
@@ -159,7 +154,7 @@ params: params ';' paramgr
     | paramgr 
     | {};
 paramgr: PARAMGRH varlist ;
-args: ID | ID ',' args | LIT | LIT ',' args ;
+args: ID | ID ',' args | LIT | LIT ',' args | ;
 %%
 
 

@@ -96,7 +96,7 @@ else {
 }
 ">" {
     printf("GR: %s\n", yytext);
-    return GR;
+    return GT;
 }
 ">=" {
     printf("GREQ: %s\n", yytext);
@@ -104,7 +104,7 @@ else {
 }
 "<" {
     printf("LE: %s\n", yytext);
-    return LE;
+    return LT;
 }
 "<=" {
     printf("LEEQ: %s\n", yytext);
@@ -114,16 +114,6 @@ else {
     printf("ID: %s\n", yytext);
     yylval._string = strdup(yytext);
     return ID;
-}
-\*[a-zA-Z]+[a-zA-Z0-9_]* {
-    printf("DEREFID: %s\n", yytext);
-    yylval._string = strdup(yytext);
-    return DEREFID;
-}
-&[a-zA-Z]+[a-zA-Z0-9_]* {
-    printf("ADDRESSOFID: %s\n", yytext);
-    yylval._string = strdup(yytext);
-    return ADDRESSOFID;
 }
 \|[a-zA-Z]+[a-zA-Z0-9_]*\| {
     printf("LENGTHOF: %s\n", yytext);
