@@ -80,14 +80,6 @@ a[19] = 'f';
 a[4+2] = 'g';
 b = a;
 b[3] = c;
-string a[30], b[100] = "moshe";
-var c: char;
-var i: int;
-c = 'e';
-a[19] = 'f';
-a[4+2] = 'g';
-b = a;
-b[3] = c;
 a = "test"; /* basically equivalent to a[0] = 't'; a[1] = 'e'; a[2] = 's'; a[3] = 't'; a[4] = '\0'; */
 i = |b|; /* this assigns 100 to variable i, since the length operator returns the size of the character array */
 
@@ -144,7 +136,7 @@ while(true) { l = 2; k = l + j; }
 
 
 if(true) i = 5;
-if(true) { j = 3; } else x = x -1;
+if(true) { j = 3; } else x = x -100500;
 while(false) x = x + 1;
 for (i=0; i<10; i=i+2){ a = a + i;}
 do {a = a + i; i= i + 1;} while (i<=10);
@@ -162,3 +154,4 @@ x = &y[5]; /* x points to 'r' */
 z = *(x - 5); /* z is 'f' */
 
 y = "barfoo"; /* z is still 'f', but x now points to 'o' */
+/* end of test */

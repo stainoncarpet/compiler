@@ -1,164 +1,163 @@
  #include <string.h>
 %%
 \/\*.*?\*\/ {
-    printf("comment1: [%s]\n", yytext);
+    // printf("comment1: [%s]\n", yytext);
 }
 bool {
-    printf("BOOL: %s\n", yytext);
+    //printf("BOOL: %s\n", yytext);
     return BOOL;
 }
 char {
-    printf("CHAR: %s\n", yytext);
+    //printf("CHAR: %s\n", yytext);
     return CHAR;
 }
 int {
-    printf("INT: %s\n", yytext);
+    //printf("INT: %s\n", yytext);
     return INT;
 }
 real {
-    printf("REAL: %s\n", yytext);
+    //printf("REAL: %s\n", yytext);
     return REAL;
 }
 string {
-    printf("STRING: %s\n", yytext);
+    //printf("STRING: %s\n", yytext);
     return STRING;
 }
 int\* {
-    printf("INTPTR: %s\n", yytext);
+    //printf("INTPTR: %s\n", yytext);
     return INTPTR;
 }
 char\* {
-    printf("CHARPTR: %s\n", yytext);
+    //printf("CHARPTR: %s\n", yytext);
     return CHARPTR;
 }
 real\* {
-    printf("REALPTR: %s\n", yytext);
+    //printf("REALPTR: %s\n", yytext);
     return REALPTR;
 }
 
 while {
-    printf("WHILE: %s\n", yytext);
+    //printf("WHILE: %s\n", yytext);
     return WHILE;
 }
 for {
-    printf("FOR: %s\n", yytext);
+    //printf("FOR: %s\n", yytext);
     return FOR;
 }
 var {
-    printf("VAR: %s\n", yytext);
+    //printf("VAR: %s\n", yytext);
     return VAR;
 }
 (true)|(false) {
-    printf("BOOLLIT: %s\n", yytext);
-    yylval._bool = strcmp(yytext, "false") == 0 ? 0 : 1;
+    //printf("BOOLLIT: %s\n", yytext);
+    yylval.rawTokenValue = strdup(yytext);
     return BOOLLIT;
 }
 arg-\> {
-    printf("PARAMGRH: %s\n", yytext);
+    //printf("PARAMGRH: %s\n", yytext);
     return PARAMGRH;
 }
 function {
-    printf("FUNCTION: %s\n", yytext);
+    //printf("FUNCTION: %s\n", yytext);
     return FUNCTION;
 }
 return {
-    printf("RETURN: %s\n", yytext);
+    //printf("RETURN: %s\n", yytext);
     return RETURN;
 }
 null {
-    printf("NULLLIT: %s\n", yytext);
+    //printf("NULLLIT: %s\n", yytext);
+    yylval.rawTokenValue = strdup("NULL");
     return NULLLIT;
 }
 void {
-    printf("VOID: %s\n", yytext);
+    //printf("VOID: %s\n", yytext);
     return VOID;
 }
 do {
-    printf("DO: %s\n", yytext);
+    //printf("DO: %s\n", yytext);
     return DO;
 }
 
 if {
-    printf("IF: %s\n", yytext);
+    //printf("IF: %s\n", yytext);
     return IF;
 }
 else {
-    printf("ELSE: %s\n", yytext);
+    //printf("ELSE: %s\n", yytext);
     return ELSE;
 }
 "==" {
-    printf("EQ: %s\n", yytext);
+    //printf("EQ: %s\n", yytext);
     return EQ;
 }
 "!=" {
-    printf("NOTEQ: %s\n", yytext);
+    //printf("NOTEQ: %s\n", yytext);
     return NOTEQ;
 }
 ">" {
-    printf("GR: %s\n", yytext);
+    //printf("GR: %s\n", yytext);
     return GT;
 }
 ">=" {
-    printf("GREQ: %s\n", yytext);
+    //printf("GREQ: %s\n", yytext);
     return GREQ;
 }
 "<" {
-    printf("LE: %s\n", yytext);
+    //printf("LE: %s\n", yytext);
     return LT;
 }
 "<=" {
-    printf("LEEQ: %s\n", yytext);
+    //printf("LEEQ: %s\n", yytext);
     return LEEQ;
 }
 [a-zA-Z]+[a-zA-Z0-9_]* {
-    printf("ID: %s\n", yytext);
-    yylval._string = strdup(yytext);
+    //printf("ID: %s\n", yytext);
+    yylval.rawTokenValue = strdup(yytext);
     return ID;
 }
-\|[a-zA-Z]+[a-zA-Z0-9_]*\| {
-    printf("LENGTHOF: %s\n", yytext);
-    yylval._string = strdup(yytext);
-    return LENGTHOF;
-}
-[a-zA-Z]+[a-zA-Z0-9_]*\+\+ {
-    printf("VARINCR: %s\n", yytext);
-    return VARINCR;
-}
-[a-zA-Z]+[a-zA-Z0-9_]*\-\- {
-    printf("VARDECR: %s\n", yytext);
-    return VARDECR;
-}
 \'.\' {
-    printf("CHARLIT: %s\n", yytext);
-    yylval._char = yytext[1];
+    //printf("CHARLIT: %s\n", yytext);
+    yylval.rawTokenValue = strdup(yytext);
     return CHARLIT;
 }
 \".*\" {
-    printf("STRINGLIT: %s\n", yytext);
-    yylval._string = strdup(yytext);
+    //printf("STRINGLIT: %s\n", yytext);
+    yylval.rawTokenValue = strdup(yytext);
     return STRINGLIT;
 }
 "&&" {
-    printf("AND: %s\n", yytext);
+    //printf("AND: %s\n", yytext);
     return AND;
 }
 "||" {
-    printf("OR: %s\n", yytext);
+    //printf("OR: %s\n", yytext);
     return OR;
 }
+"{" {
+    //printf("BLOCK_START: %s\n", yytext);
+    return BLOCK_START;
+}
+"}" {
+    //printf("BLOCK_END: %s\n", yytext);
+    return BLOCK_END;
+}
 (-?[0-9]+)|(0[xX][0-9A-F]+) {
-    printf("INTLIT: %s\n", yytext);
-    yylval._int = atoi(yytext);
+    //printf("INTLIT: %s\n", yytext);
+    yylval.rawTokenValue = strdup(yytext);
     return INTLIT;
 }
 (-?[0-9]+\.[0-9]+)([eE][-\+][0-9]+)? {
-    printf("REALLIT: %s\n", yytext);
-    yylval._float = atof(yytext);
+    //printf("REALLIT: %s\n", yytext);
+    yylval.rawTokenValue = strdup(yytext);
     return REALLIT;
 }
-[ \t\n]+ { ; }
+[ \t]+ { ; }
+[\n] {
+    yylineno++;
+}
 . {
-    printf("SYMBOL: %s\n", yytext);
+    //printf("SYMBOL: %s\n", yytext);
     return yytext[0];
 }
 %%
