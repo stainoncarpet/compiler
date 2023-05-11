@@ -56,7 +56,7 @@ block_context: if_statement {$$ = $1; }
             | for_loop { $$ = $1; }
             | do_loop { $$ = $1; }
             | actiondecl { $$ = $1; }
-            | start_block block end_block { $$ = makeNode("block", $2, NULL, NULL); }
+            | BLOCK_START block BLOCK_END { $$ = makeNode("block", $2, NULL, NULL); }
 ;
 if_statement: IF '(' cond ')' statement ELSE statement { 
                 TreeNode* elseSection = makeNode("ELSE", $7, NULL, NULL);
@@ -81,13 +81,13 @@ do_loop: DO block_context WHILE '(' cond ')' ';' {
 cond: expr { $$ = makeNode("condition", $1, NULL, NULL); };
 iter: assign {$$ = $1; } 
     | varincr { $$ = makeNode("varincr", $1, NULL, NULL); } 
-    | vardecr { $$ = makeNode("verdecr", $1, NULL, NULL); } 
+    | vardecr { $$ = makeNode("vardecr", $1, NULL, NULL); } 
 ;
-varincr: id '+' '+' ;
-vardecr: id '-' '-' ;
-block:  statement_list { $$ = $1; } | { $$ = NULL; } ;
-start_block: BLOCK_START  {};
-end_block: BLOCK_END;
+varincr: id '+' '+' { $$ = $1; } ;
+vardecr: id '-' '-' { $$ = $1; } ;
+block: statement_list { $$ = $1; } 
+    | { $$ = NULL; } 
+;
 assign: init_assign '=' finish_assign  { $$ = makeNode("assign", $1, $3, NULL); }
 ;
 init_assign: id { $$ = $1; }
@@ -115,6 +115,8 @@ finish_assign: expr { $$ = $1; }
                         strncpy(sanitizedStr, $2->left->token + 1, 32);
                         $2->left->token = strdup(sanitizedStr);
                         $$ = makeNode("DIV", $1, $2, NULL);
+                } else {
+                    $$ = NULL;
                 }
             };
            | '&' arrentry { $$ = makeNode("referenced", $2, NULL, NULL); }
@@ -135,10 +137,10 @@ expr: LIT { $$ = $1; }
     | expr_leeq { $$ = $1; }
     | expr_gt { $$ = $1; }
     | expr_greq { $$ = $1; }
-    | expr_enslosed {}
+    | expr_enslosed { $$ = $1; }
     | expr_deref { $$ = $1; }
     | expr_flipped { $$ = $1; }
-    | expr_ref {}
+    | expr_ref { $$ = $1; }
     | error '\t' { 
         yyerrok;
         printf("\nERROR PARSING EXPRESSION HERE: ->_%c\n", yychar);
@@ -203,7 +205,7 @@ id: ID {
         $$ = makeNode("id", idName, NULL, NULL); 
     }
 ;
-arrdecl: type arrlist_initiable { $$ = makeNode("arrdecl", $1, $2, NULL);} ;
+arrdecl: type arrlist_initiable { $$ = makeNode("arrdecl", $1, $2, NULL); } ;
 arrentry: id '[' intlit ']' { $$ = makeNode("arrentry", $1, $3, NULL); } ;
 arrlist_initiable: arrentry '=' expr { $$ = makeNode("arrentry_init", $1, $3, NULL); } 
                 | arrentry '=' expr ',' arrlist_initiable { $$ = makeNode("arrentry_init", $1, $3, $5); } 
@@ -268,16 +270,14 @@ args: id { $$ = makeNode("args", $1, NULL, NULL); }
 
 #include "lex.yy.c"
 
+extern int yylineno;
+
 int main() {
     int res = yyparse();
-
     printTree(TREE, 0);
-
-
 	return res;
 }
 
-extern int yylineno;
 int yyerror(char* msg) { 
     printf("############# Error parsing LINE %d msg: [%s] \n", yylineno, msg);  
     return 0; 
@@ -288,10 +288,8 @@ int yywrap() {
 }
 
 void printTree(TreeNode *tree, int space) {
-    int i;
-
     if (tree) {
-        for (i = 0; i < space; i++) { printf("\t"); }
+        for (int i = 0; i < space; i++) { printf("\t"); }
             
         printf("%s\n", tree->token);
         printTree(tree->left, space + 1);

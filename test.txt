@@ -1,0 +1,8 @@
+var z: bool;
+var c: char;
+var i1, i2: int;
+var r: real;
+var str: string;
+var ip: int*;
+var cp: char*;
+var rp: real*;
