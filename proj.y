@@ -3,7 +3,7 @@
 #include <string.h>
 #include <stdlib.h>
 int yylex();
-int yyerror();
+void yyerror();
 int yywrap();
 typedef struct TreeNode {
     char* token;
@@ -12,6 +12,7 @@ typedef struct TreeNode {
     struct TreeNode* right;
 } TreeNode;
 void printTree(TreeNode*, int);
+void freeTree(TreeNode*);
 TreeNode* makeNode(char*, TreeNode*, TreeNode*, TreeNode*);
 TreeNode* TREE;
 %}
@@ -22,7 +23,7 @@ TreeNode* TREE;
     struct TreeNode* node;
 }
 
-%type <node> program statement statement_list if_statement vardecl id cond block block_context expr expr_eq init_assign finish_assign assign LIT type while_loop for_setting for_loop do_loop iter varincr vardecr expr_lt expr_subt expr_mult expr_add expr_div expr_or expr_and expr_noteq expr_leeq expr_gt expr_greq action_signature actiondecl params varlist paramgr return_statement actioncall args varlist_initable arrlist_initiable arrdecl arrentry intlit expr_lengthof expr_deref expr_ref expr_enslosed expr_flipped
+%type <node> program statement statement_list if_statement vardecl id cond block block_context expr expr_eq init_assign finish_assign assign LIT type while_loop for_setting for_loop do_loop iter varincr vardecr expr_lt expr_subt expr_mult expr_add expr_div expr_or expr_and expr_noteq expr_leeq expr_gt expr_greq action_signature actiondecl params varlist paramgr return_statement actioncall args varlist_initable arrlist_initiable arrdecl arrentry intlit expr_lengthof expr_deref expr_ref expr_enslosed expr_flipped expr_negated
 %token BLOCK_START BLOCK_END BOOL CHAR INT REAL STRING EQ NOTEQ GT GREQ LT LEEQ AND OR RETURN VOID VAR PARAMGRH IF ELSE DO WHILE FOR FUNCTION INTPTR CHARPTR REALPTR
 %token <rawTokenValue> INTLIT REALLIT BOOLLIT CHARLIT STRINGLIT NULLLIT ID
 %type expr_lengthof
@@ -37,10 +38,9 @@ TreeNode* TREE;
 %left '(' ')'
 %left ELSE
 
-
 %%
 program: statement_list { TREE = makeNode("program", $1, NULL, NULL); }
-statement_list: statement_list statement { $$ = makeNode("statement_list", $1, $2, NULL); }
+statement_list: statement statement_list { $$ = makeNode("statement_list", $1, $2, NULL); }
             | statement { $$ = $1; }
 ;
 statement: block_context { $$ = $1; }
@@ -79,7 +79,7 @@ do_loop: DO block_context WHILE '(' cond ')' ';' {
     }
 ;
 cond: expr { $$ = makeNode("condition", $1, NULL, NULL); };
-iter: assign {$$ = $1; } 
+iter: assign { $$ = $1; } 
     | varincr { $$ = makeNode("varincr", $1, NULL, NULL); } 
     | vardecr { $$ = makeNode("vardecr", $1, NULL, NULL); } 
 ;
@@ -95,35 +95,12 @@ init_assign: id { $$ = $1; }
         | expr_deref { $$ = $1; }
 ;
 finish_assign: expr { $$ = $1; }
-           | expr LIT { 
-                char stickyChar = $2->left->token[0];
-                char sanitizedStr[32];
-
-                if(stickyChar == '-') {
-                        strncpy(sanitizedStr, $2->left->token + 1, 32);
-                        $2->left->token = strdup(sanitizedStr);
-                        $$ = makeNode("SUB", $1, $2, NULL);
-                } else if(stickyChar == '+') {
-                        strncpy(sanitizedStr, $2->left->token + 1, 32);
-                        $2->left->token = strdup(sanitizedStr);
-                        $$ = makeNode("ADD", $1, $2, NULL);
-                } else if(stickyChar == '*') {
-                        strncpy(sanitizedStr, $2->left->token + 1, 32);
-                        $2->left->token = strdup(sanitizedStr);
-                        $$ = makeNode("MULT", $1, $2, NULL);
-                } else if(stickyChar == '/') {
-                        strncpy(sanitizedStr, $2->left->token + 1, 32);
-                        $2->left->token = strdup(sanitizedStr);
-                        $$ = makeNode("DIV", $1, $2, NULL);
-                } else {
-                    $$ = NULL;
-                }
-            };
            | '&' arrentry { $$ = makeNode("referenced", $2, NULL, NULL); }
 ;
 expr: LIT { $$ = $1; }
     | actioncall { $$ = $1; }
     | id { $$ = $1; }
+    | arrentry { $$ = $1; }
     | expr_lengthof { $$ = $1; }
     | expr_subt { $$ = $1; }
     | expr_mult { $$ = $1; }
@@ -140,11 +117,8 @@ expr: LIT { $$ = $1; }
     | expr_enslosed { $$ = $1; }
     | expr_deref { $$ = $1; }
     | expr_flipped { $$ = $1; }
+    | expr_negated { $$ = $1; }
     | expr_ref { $$ = $1; }
-    | error '\t' { 
-        yyerrok;
-        printf("\nERROR PARSING EXPRESSION HERE: ->_%c\n", yychar);
-    }
 ;
 expr_greq: expr GREQ expr { $$ = makeNode("GREQ", $1, $3, NULL); };
 expr_gt: expr GT expr { $$ = makeNode("GT", $1, $3, NULL); };
@@ -163,6 +137,7 @@ expr_deref: '*' id { $$ = makeNode("dereferenced", $2, NULL, NULL); }
         | '*' expr_enslosed { $$ = makeNode("dereferenced", $2, NULL, NULL); } 
 ;
 expr_flipped: '!' expr { $$ = makeNode("flipped", $2, NULL, NULL); } ;
+expr_negated: '-' expr { $$ = makeNode("negated", $2, NULL, NULL); } ;
 expr_ref: '&' id { $$ = makeNode("referenced", $2, NULL, NULL); } ;
 expr_lengthof: '|' id '|' { $$ = makeNode("LENGTHOF", $2, NULL, NULL); };
 LIT: intlit { $$ = $1; }
@@ -206,7 +181,7 @@ id: ID {
     }
 ;
 arrdecl: type arrlist_initiable { $$ = makeNode("arrdecl", $1, $2, NULL); } ;
-arrentry: id '[' intlit ']' { $$ = makeNode("arrentry", $1, $3, NULL); } ;
+arrentry: id '[' expr ']' { $$ = makeNode("arrentry", $1, $3, NULL); } ;
 arrlist_initiable: arrentry '=' expr { $$ = makeNode("arrentry_init", $1, $3, NULL); } 
                 | arrentry '=' expr ',' arrlist_initiable { $$ = makeNode("arrentry_init", $1, $3, $5); } 
                 | arrentry { $$ = makeNode("arrentry_init", $1, NULL, NULL); } 
@@ -260,10 +235,8 @@ params: paramgr { $$ = makeNode("params", $1, NULL, NULL); }
         | { $$ = makeNode("params", NULL, NULL, NULL); }
 ;
 paramgr: PARAMGRH varlist ':' type { $$ = makeNode("paramgroup", $2, $4, NULL); };
-args: id { $$ = makeNode("args", $1, NULL, NULL); }
-    | id ',' args { $$ = makeNode("args", $1, $3, NULL); }
-    | LIT { $$ = makeNode("args", $1, NULL, NULL); }
-    | LIT ',' args { $$ = makeNode("args", $1, $3, NULL); }
+args: expr { $$ = makeNode("args", $1, NULL, NULL); }
+    | expr ',' args { $$ = makeNode("args", $1, $3, NULL); }
     | { $$ = makeNode("args", NULL, NULL, NULL); }
 ;
 %%
@@ -274,13 +247,16 @@ extern int yylineno;
 
 int main() {
     int res = yyparse();
+    
     printTree(TREE, 0);
+    freeTree(TREE);
+    
 	return res;
 }
 
-int yyerror(char* msg) { 
-    printf("############# Error parsing LINE %d msg: [%s] \n", yylineno, msg);  
-    return 0; 
+void yyerror() { 
+    fprintf(stderr, "### ERROR @ LINE %d\n", yylineno);
+    fprintf(stderr, "\t### error in: \"%s\"\n", yytext);
 }
 
 int yywrap() {
@@ -289,9 +265,9 @@ int yywrap() {
 
 void printTree(TreeNode *tree, int space) {
     if (tree) {
-        for (int i = 0; i < space; i++) { printf("\t"); }
-            
+        for (int i = 0; i < space; i++) { printf("  "); }  
         printf("%s\n", tree->token);
+
         printTree(tree->left, space + 1);
         printTree(tree->middle, space + 1);
         printTree(tree->right, space + 1);
@@ -299,12 +275,27 @@ void printTree(TreeNode *tree, int space) {
 }
 
 TreeNode* makeNode(char *token, TreeNode *left, TreeNode *middle, TreeNode *right){
-    TreeNode *newnode = (TreeNode *)malloc(sizeof(TreeNode));
-    char *newtoken = (char *)malloc(sizeof(token) + 1);
+    TreeNode *newnode = (TreeNode*)malloc(sizeof(TreeNode));
+    char *newtoken = (char*)malloc(sizeof(token) + 1);
+
     strcpy(newtoken, token);
     newnode->token = newtoken;
+
     newnode->left = left;
     newnode->right = right;
     newnode->middle = middle;
+
     return newnode;
+}
+
+void freeTree(TreeNode* node) {
+    if (node == NULL) { return; }
+
+    free(node->token);
+
+    freeTree(node->left);
+    freeTree(node->middle);
+    freeTree(node->right);
+
+    free(node);
 }

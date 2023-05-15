@@ -1,6 +1,6 @@
  #include <string.h>
 %%
-\/\*.*?\*\/ {
+"/*"([^*]|\*+[^*/])*\*+"/" {
     // printf("comment1: [%s]\n", yytext);
 }
 bool {
@@ -142,12 +142,12 @@ else {
     //printf("BLOCK_END: %s\n", yytext);
     return BLOCK_END;
 }
-(-?[0-9]+)|(0[xX][0-9A-F]+) {
+([0-9]+)|(0[xX][0-9A-F]+) {
     //printf("INTLIT: %s\n", yytext);
     yylval.rawTokenValue = strdup(yytext);
     return INTLIT;
 }
-(-?[0-9]+\.[0-9]+)([eE][-\+][0-9]+)? {
+([0-9]+\.[0-9]+)([eE][-\+][0-9]+)? {
     //printf("REALLIT: %s\n", yytext);
     yylval.rawTokenValue = strdup(yytext);
     return REALLIT;
